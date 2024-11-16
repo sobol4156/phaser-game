@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import Player from '../../components/Player'
 import background from '../assets/backgroundGame.png';
 import playerStand from '../assets/pixel/Tiles/Characters/tile_0000.png';
 import playerMove from '../assets/pixel/Tiles/Characters/tile_0001.png';
@@ -6,8 +7,7 @@ import bullet from '../assets/pixel/Tiles/tile_0151.png';
 import enemy from '../assets/pixel/Tiles/Characters/tile_0021.png';
 
 export default class GameScene extends Phaser.Scene {
-  private player!: Phaser.Physics.Arcade.Sprite;
-  private bullets!: Phaser.Physics.Arcade.Group;
+  private player!: Player;
   private health: number = 0;
   private healthText!: Phaser.GameObjects.Text;
   private score: number = 0;
@@ -19,9 +19,6 @@ export default class GameScene extends Phaser.Scene {
     right: Phaser.Input.Keyboard.Key;
     jump: Phaser.Input.Keyboard.Key;
   };
-  private isMoving: boolean = false;
-  private moveAnimationInterval: NodeJS.Timeout | null = null;
-  private isOnGround: boolean = false;
   private enemies!: Phaser.Physics.Arcade.Group;
   private gameOverContainer!: Phaser.GameObjects.Container;
   private enemySpawnEvent!: Phaser.Time.TimerEvent;
@@ -41,9 +38,7 @@ export default class GameScene extends Phaser.Scene {
   create() {
     this.add.image(600, 340, 'background');
 
-    this.player = this.physics.add.sprite(50, 550, 'player');
-    this.player.setBounce(0.1);
-    this.player.setCollideWorldBounds(true);
+    this.player = new Player(this, 50, 550);
 
     this.keys = this.input.keyboard?.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -66,13 +61,6 @@ export default class GameScene extends Phaser.Scene {
       fill: 'white',
       strokeThickness: 1
     })
-    // Пульки
-    this.bullets = this.physics.add.group({
-      classType: Phaser.Physics.Arcade.Image,
-      runChildUpdate: true,
-    })
-
-    this.input.on('pointerdown', this.shootBullet, this)
 
     //Враги
     this.enemies = this.physics.add.group({
@@ -87,53 +75,15 @@ export default class GameScene extends Phaser.Scene {
       loop: true,
     });
 
-    this.physics.add.collider(this.player, this.enemies, this.handlePlayerHit, undefined, this)
+    this.physics.add.collider(this.player.getSprite(), this.enemies, this.handlePlayerHit, undefined, this)
 
-    this.physics.add.collider(this.bullets, this.enemies, this.handleBulletHitEnemy, undefined, this);
+    this.physics.add.collider(this.player.getBullets(), this.enemies, this.handleBulletHitEnemy, undefined, this);
 
     this.createGameOverScreen();
   }
 
   update() {
-    // Проверяем, находится ли игрок на земле
-    if (this.player.body?.blocked.down) {
-      if (!this.isOnGround) {
-        // Игрок только что приземлился
-        this.isOnGround = true;
-        this.stopMoveAnimation();
-        this.player.setTexture('player');
-      }
-    } else {
-      // Игрок в воздухе
-      this.isOnGround = false;
-      this.stopMoveAnimation();
-      this.player.setTexture('player-move');
-
-    }
-    // Логика движения влево
-    if (this.keys.left.isDown) {
-      this.player.setVelocityX(-160);
-      if (this.isOnGround) {
-        this.startMoveAnimation()
-      }
-    }
-    // Логика движения вправо
-    else if (this.keys.right.isDown) {
-      this.player.setVelocityX(160);
-      if (this.isOnGround) {
-        this.startMoveAnimation()
-      }
-    }
-    // Логика остановки
-    else {
-      this.player.setVelocityX(0);
-      this.stopMoveAnimation()
-    }
-
-    // Прыжок
-    if ((this.keys.up.isDown || this.keys.jump.isDown) && this.player.body?.blocked.down) {
-      this.player.setVelocityY(-330);
-    }
+    this.player.handleMovement(this.keys);
 
     // удаляем врагов которые вышли за границу
     this.enemies.getChildren().forEach((enemy) => {
@@ -143,44 +93,7 @@ export default class GameScene extends Phaser.Scene {
       }
     })
   }
-  // начало анимации ходьбы
-  private startMoveAnimation() {
-    if (!this.isMoving) {
-      this.isMoving = true;
 
-      let toggle = true;
-      this.moveAnimationInterval = setInterval(() => {
-        this.player.setTexture(toggle ? 'player-move' : 'player');
-        toggle = !toggle;
-      }, 100); // Интервал смены текстур
-    }
-  }
-  // прекращение анимации ходьбы
-  private stopMoveAnimation() {
-    if (this.isMoving) {
-      this.isMoving = false;
-      if (this.moveAnimationInterval) {
-        clearInterval(this.moveAnimationInterval); // Очищаем интервал анимации
-        this.moveAnimationInterval = null;
-      }
-      this.player.setTexture('player');
-    }
-  }
-  // выстрел пули
-  private shootBullet(pointer: Phaser.Input.Pointer) {
-    const bullet = this.bullets.get(
-      this.player.x,
-      this.player.y - 10,
-      'bullet'
-    ) as Phaser.Physics.Arcade.Image;
-
-    if (bullet) {
-      bullet.setActive(true);
-      bullet.setVisible(true);
-
-      this.physics.moveTo(bullet, pointer.x, pointer.y, 600)
-    }
-  }
   // появление врагов
   private spawnEnemy() {
     const x = Phaser.Math.Between(800, 1200);
@@ -221,8 +134,7 @@ export default class GameScene extends Phaser.Scene {
   private showGameOverScreen() {
     this.stopEnemySpawning();
     this.enemies.clear(true, true);
-    this.player.setVisible(false);
-    
+    this.player.getSprite().setVisible(false);
     this.gameOverContainer.setVisible(true);
   }
   // создание окошка GameOver
@@ -240,7 +152,7 @@ export default class GameScene extends Phaser.Scene {
       backgroundColor: '#ffffff',
     })
     .setOrigin(0.5)
-    .setInteractive({useHandCursos: true})
+    .setInteractive({useHandCursor: true})
     .on('pointerdown', () => this.scene.restart())
 
     this.gameOverContainer = this.add.container(0,0, [background, gameOverText, restartButton])
