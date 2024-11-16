@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import Player from '../../components/Player'
 import Enemy from '../../components/Enemy'
 import GameOverUI from '../../components/GameOverUI'
+import GameStateManager from '../../components/GameStateManager';
+import InputManager from '../../components/InputManager';
 import background from '../assets/backgroundGame.png';
 import playerStand from '../assets/pixel/Tiles/Characters/tile_0000.png';
 import playerMove from '../assets/pixel/Tiles/Characters/tile_0001.png';
@@ -10,19 +12,10 @@ import enemy from '../assets/pixel/Tiles/Characters/tile_0021.png';
 
 export default class GameScene extends Phaser.Scene {
   private player!: Player;
-  private health: number = 0;
-  private healthText!: Phaser.GameObjects.Text;
-  private score: number = 0;
-  private scoreText!: Phaser.GameObjects.Text;
-  private keys!: {
-    up: Phaser.Input.Keyboard.Key;
-    down: Phaser.Input.Keyboard.Key;
-    left: Phaser.Input.Keyboard.Key;
-    right: Phaser.Input.Keyboard.Key;
-    jump: Phaser.Input.Keyboard.Key;
-  };
+  private inputManager!: InputManager;
   private enemies!: Enemy;
   private gameOverUI!: GameOverUI;
+  private gameState!: GameStateManager;
 
   constructor() {
     super('GameScene');
@@ -39,20 +32,17 @@ export default class GameScene extends Phaser.Scene {
   create() {
     this.add.image(600, 340, 'background');
 
-    this.player = new Player(this, 50, 550);
+    this.inputManager = new InputManager(this)
 
+    this.player = new Player(this, 50, 550);
 
     this.enemies = new Enemy(this)
 
     this.gameOverUI = new GameOverUI(this, () => {
       this.scene.restart();
-
-      this.health = 100;
-      this.healthText.setText(`Health: ${this.health}`)
-
-      this.score = 0;
-      this.healthText.setText(`Score: ${this.score}`)
     });
+
+    this.gameState = new GameStateManager(this);
 
     this.keys = this.input.keyboard?.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -62,20 +52,6 @@ export default class GameScene extends Phaser.Scene {
       jump: Phaser.Input.Keyboard.KeyCodes.SPACE,
     });
 
-    // Текст здоровья и счёта
-    this.healthText = this.add.text(20, 20, `Health: ${this.health}`, {
-      font: '26px Arial',
-      fill: 'red',
-      stroke: 'red',
-      strokeThickness: 1
-    })
-
-    this.scoreText = this.add.text(1040, 20, `Score: ${this.score}`, {
-      font: '26px Arial',
-      fill: 'white',
-      strokeThickness: 1
-    })
-
     this.enemies.startSpawning(2000)
 
     this.physics.add.collider(this.player.getSprite(), this.enemies.getGroup(), this.handlePlayerHit, undefined, this)
@@ -84,15 +60,14 @@ export default class GameScene extends Phaser.Scene {
   }
 
   update() {
-    this.player.handleMovement(this.keys);
+    this.player.handleMovement(this.inputManager.getKeys());
   }
 
   // урон по игроку
   private handlePlayerHit(player: Phaser.GameObjects.GameObject, enemy: Phaser.GameObjects.GameObject) {
     const enemySprite = enemy as Phaser.Physics.Arcade.Sprite;
 
-    this.health -= 10;
-    this.healthText.setText(`Health: ${this.health}`)
+    this.gameState.decreaseHealth(10)
 
     enemySprite.destroy()
     if (this.health <= 0) {
@@ -104,8 +79,7 @@ export default class GameScene extends Phaser.Scene {
     const bulletSprite = bullet as Phaser.Physics.Arcade.Image;
     const enemySprite = enemy as Phaser.Physics.Arcade.Image;
 
-    this.score += 10;
-    this.scoreText.setText(`Score: ${this.score}`)
+    this.gameState.increaseScore(10)
 
     bulletSprite.destroy();
     enemySprite.destroy();
