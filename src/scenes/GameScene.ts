@@ -8,7 +8,7 @@ import enemy from '../assets/pixel/Tiles/Characters/tile_0021.png';
 export default class GameScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private bullets!: Phaser.Physics.Arcade.Group;
-  private health: number = 100;
+  private health: number = 0;
   private healthText!: Phaser.GameObjects.Text;
   private score: number = 0;
   private scoreText!: Phaser.GameObjects.Text;
@@ -22,7 +22,9 @@ export default class GameScene extends Phaser.Scene {
   private isMoving: boolean = false;
   private moveAnimationInterval: NodeJS.Timeout | null = null;
   private isOnGround: boolean = false;
-  private enemies!: Phaser.Physics.Arcade.Group
+  private enemies!: Phaser.Physics.Arcade.Group;
+  private gameOverContainer!: Phaser.GameObjects.Container;
+  private enemySpawnEvent!: Phaser.Time.TimerEvent;
 
   constructor() {
     super('GameScene');
@@ -78,16 +80,18 @@ export default class GameScene extends Phaser.Scene {
       runChildUpdate: true
     })
 
-    this.time.addEvent({
+    this.enemySpawnEvent = this.time.addEvent({
       delay: 2000,
       callback: this.spawnEnemy,
       callbackScope: this,
-      loop: true
-    })
+      loop: true,
+    });
 
     this.physics.add.collider(this.player, this.enemies, this.handlePlayerHit, undefined, this)
-    
+
     this.physics.add.collider(this.bullets, this.enemies, this.handleBulletHitEnemy, undefined, this);
+
+    this.createGameOverScreen();
   }
 
   update() {
@@ -199,10 +203,7 @@ export default class GameScene extends Phaser.Scene {
 
     enemySprite.destroy()
     if (this.health <= 0) {
-      this.scene.restart();
-      console.log('Game Over')
-      this.health = 100;
-      this.healthText.setText(`Health: ${this.health}`)
+      this.showGameOverScreen();
     }
   }
   // урон по врагу
@@ -215,5 +216,39 @@ export default class GameScene extends Phaser.Scene {
 
     bulletSprite.destroy();
     enemySprite.destroy();
+  }
+  // показ окошка GameOver
+  private showGameOverScreen() {
+    this.stopEnemySpawning();
+    this.enemies.clear(true, true);
+    this.player.setVisible(false);
+    
+    this.gameOverContainer.setVisible(true);
+  }
+  // создание окошка GameOver
+  private createGameOverScreen(){
+    const background = this.add.rectangle(600, 340, 1200, 750, 0x000000, 0.7);
+
+    const gameOverText = this.add.text(600, 250, 'GAME OVER', {
+      font: '48px Arial',
+      fill: '#ffffff'
+    }).setOrigin(0.5);
+
+    const restartButton = this.add.text(600, 400, 'Try again', {
+      font: '32px Arial',
+      fill: '#ff0000',
+      backgroundColor: '#ffffff',
+    })
+    .setOrigin(0.5)
+    .setInteractive({useHandCursos: true})
+    .on('pointerdown', () => this.scene.restart())
+
+    this.gameOverContainer = this.add.container(0,0, [background, gameOverText, restartButton])
+    this.gameOverContainer.setVisible(false);
+  }
+  private stopEnemySpawning() {
+    if (this.enemySpawnEvent) {
+      this.enemySpawnEvent.remove(); 
+    }
   }
 }
