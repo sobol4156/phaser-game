@@ -46,6 +46,12 @@ export default class GameScene extends Phaser.Scene {
 
     this.gameOverUI = new GameOverUI(this, () => {
       this.scene.restart();
+
+      this.health = 100;
+      this.healthText.setText(`Health: ${this.health}`)
+
+      this.score = 0;
+      this.healthText.setText(`Score: ${this.score}`)
     });
 
     this.keys = this.input.keyboard?.addKeys({
