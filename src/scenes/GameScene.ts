@@ -4,6 +4,7 @@ import Enemy from '../../components/Enemy'
 import GameOverUI from '../../components/GameOverUI'
 import GameStateManager from '../../components/GameStateManager';
 import InputManager from '../../components/InputManager';
+import GameStartUI from '../../components/GameStartUI';
 import background from '../assets/backgroundGame.png';
 import playerStand from '../assets/pixel/Tiles/Characters/tile_0000.png';
 import playerMove from '../assets/pixel/Tiles/Characters/tile_0001.png';
@@ -16,7 +17,7 @@ export default class GameScene extends Phaser.Scene {
   private enemies!: Enemy;
   private gameOverUI!: GameOverUI;
   private gameState!: GameStateManager;
-  private startContainer!: Phaser.GameObjects.Container;
+  private gameStartUI!: GameStartUI;
   private isGameStarted: boolean = false;
 
   constructor() {
@@ -34,7 +35,9 @@ export default class GameScene extends Phaser.Scene {
   create() {
     this.add.image(600, 340, 'background');
 
-    this.createStartScreen();
+    this.gameStartUI = new GameStartUI(this, () => {
+      this.startGame(); 
+    });
 
     this.inputManager = new InputManager(this)
 
@@ -99,30 +102,10 @@ export default class GameScene extends Phaser.Scene {
 
   private startGame() {
     this.isGameStarted = true; // Устанавливаем флаг старта
-    this.startContainer.setVisible(false); // Скрываем экран старта
+    this.gameStartUI.hide(); // Скрываем экран старта
     this.physics.resume(); // Возобновляем физику
     this.player.getSprite().setVisible(true); // Делаем игрока видимым
     this.enemies.startSpawning(2000); // Начинаем спавн врагов
-  }
-
-  private createStartScreen() {
-    const background = this.add.rectangle(600, 340, 1200, 750, 0x000000, 0.7);
-    const startText = this.add.text(600, 250, 'START GAME', {
-      font: '48px Arial',
-      fill: '#ffffff',
-    }).setOrigin(0.5);
-
-    const startButton = this.add.text(600, 400, 'Start', {
-      font: '32px Arial',
-      fill: '#ffffff',
-    })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => {
-        this.startGame(); // Запуск игры
-      });
-
-    this.startContainer = this.add.container(0, 0, [background, startText, startButton]);
   }
 
   private resetGame() {
