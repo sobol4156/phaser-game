@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import Player from '../../components/Player'
+import Enemy from '../../components/Enemy'
 import background from '../assets/backgroundGame.png';
 import playerStand from '../assets/pixel/Tiles/Characters/tile_0000.png';
 import playerMove from '../assets/pixel/Tiles/Characters/tile_0001.png';
@@ -19,9 +20,8 @@ export default class GameScene extends Phaser.Scene {
     right: Phaser.Input.Keyboard.Key;
     jump: Phaser.Input.Keyboard.Key;
   };
-  private enemies!: Phaser.Physics.Arcade.Group;
+  private enemies!: Enemy;
   private gameOverContainer!: Phaser.GameObjects.Container;
-  private enemySpawnEvent!: Phaser.Time.TimerEvent;
 
   constructor() {
     super('GameScene');
@@ -63,21 +63,13 @@ export default class GameScene extends Phaser.Scene {
     })
 
     //Враги
-    this.enemies = this.physics.add.group({
-      classType: Phaser.Physics.Arcade.Sprite,
-      runChildUpdate: true
-    })
+    this.enemies = new Enemy(this)
 
-    this.enemySpawnEvent = this.time.addEvent({
-      delay: 2000,
-      callback: this.spawnEnemy,
-      callbackScope: this,
-      loop: true,
-    });
+    this.enemies.startSpawning(2000)
 
-    this.physics.add.collider(this.player.getSprite(), this.enemies, this.handlePlayerHit, undefined, this)
+    this.physics.add.collider(this.player.getSprite(), this.enemies.getGroup(), this.handlePlayerHit, undefined, this)
 
-    this.physics.add.collider(this.player.getBullets(), this.enemies, this.handleBulletHitEnemy, undefined, this);
+    this.physics.add.collider(this.player.getBullets(), this.enemies.getGroup(), this.handleBulletHitEnemy, undefined, this);
 
     this.createGameOverScreen();
   }
@@ -85,28 +77,8 @@ export default class GameScene extends Phaser.Scene {
   update() {
     this.player.handleMovement(this.keys);
 
-    // удаляем врагов которые вышли за границу
-    this.enemies.getChildren().forEach((enemy) => {
-      const enemySprite = enemy as Phaser.Physics.Arcade.Sprite;
-      if (enemySprite.x < -50) {
-        enemySprite.destroy()
-      }
-    })
   }
 
-  // появление врагов
-  private spawnEnemy() {
-    const x = Phaser.Math.Between(800, 1200);
-    const y = Phaser.Math.Between(100, 500);
-    const enemy = this.enemies.create(x, y, 'enemy') as Phaser.Physics.Arcade.Sprite;
-
-    if (enemy) {
-      enemy.setActive;
-      enemy.setVisible;
-      enemy.setCollideWorldBounds(true),
-        enemy.setVelocityX(Phaser.Math.Between(-100, -150));
-    }
-  }
   // урон по игроку
   private handlePlayerHit(player: Phaser.GameObjects.GameObject, enemy: Phaser.GameObjects.GameObject) {
     const enemySprite = enemy as Phaser.Physics.Arcade.Sprite;
@@ -132,13 +104,13 @@ export default class GameScene extends Phaser.Scene {
   }
   // показ окошка GameOver
   private showGameOverScreen() {
-    this.stopEnemySpawning();
-    this.enemies.clear(true, true);
+    this.enemies.stopSwawning();
+    this.enemies.clearEnemies();
     this.player.getSprite().setVisible(false);
     this.gameOverContainer.setVisible(true);
   }
   // создание окошка GameOver
-  private createGameOverScreen(){
+  private createGameOverScreen() {
     const background = this.add.rectangle(600, 340, 1200, 750, 0x000000, 0.7);
 
     const gameOverText = this.add.text(600, 250, 'GAME OVER', {
@@ -151,16 +123,12 @@ export default class GameScene extends Phaser.Scene {
       fill: '#ff0000',
       backgroundColor: '#ffffff',
     })
-    .setOrigin(0.5)
-    .setInteractive({useHandCursor: true})
-    .on('pointerdown', () => this.scene.restart())
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.scene.restart())
 
-    this.gameOverContainer = this.add.container(0,0, [background, gameOverText, restartButton])
+    this.gameOverContainer = this.add.container(0, 0, [background, gameOverText, restartButton])
     this.gameOverContainer.setVisible(false);
   }
-  private stopEnemySpawning() {
-    if (this.enemySpawnEvent) {
-      this.enemySpawnEvent.remove(); 
-    }
-  }
+
 }
