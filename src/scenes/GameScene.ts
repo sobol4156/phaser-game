@@ -16,6 +16,8 @@ export default class GameScene extends Phaser.Scene {
   private enemies!: Enemy;
   private gameOverUI!: GameOverUI;
   private gameState!: GameStateManager;
+  private startContainer!: Phaser.GameObjects.Container;
+  private isGameStarted: boolean = false;
 
   constructor() {
     super('GameScene');
@@ -32,6 +34,8 @@ export default class GameScene extends Phaser.Scene {
   create() {
     this.add.image(600, 340, 'background');
 
+    this.createStartScreen();
+
     this.inputManager = new InputManager(this)
 
     this.player = new Player(this, 50, 550);
@@ -39,27 +43,27 @@ export default class GameScene extends Phaser.Scene {
     this.enemies = new Enemy(this)
 
     this.gameOverUI = new GameOverUI(this, () => {
-      this.scene.restart();
+      this.resetGame();
     });
 
     this.gameState = new GameStateManager(this);
-
-    this.keys = this.input.keyboard?.addKeys({
-      up: Phaser.Input.Keyboard.KeyCodes.W,
-      down: Phaser.Input.Keyboard.KeyCodes.S,
-      left: Phaser.Input.Keyboard.KeyCodes.A,
-      right: Phaser.Input.Keyboard.KeyCodes.D,
-      jump: Phaser.Input.Keyboard.KeyCodes.SPACE,
-    });
 
     this.enemies.startSpawning(2000)
 
     this.physics.add.collider(this.player.getSprite(), this.enemies.getGroup(), this.handlePlayerHit, undefined, this)
 
     this.physics.add.collider(this.player.getBullets(), this.enemies.getGroup(), this.handleBulletHitEnemy, undefined, this);
+
+    this.player.getSprite().setVisible(false);
+    this.enemies.stopSwawning();
+    this.physics.pause();
   }
 
   update() {
+    if (!this.isGameStarted) {
+      return;
+    }
+
     this.player.handleMovement(this.inputManager.getKeys());
   }
 
@@ -93,4 +97,44 @@ export default class GameScene extends Phaser.Scene {
     this.gameOverUI.show();
   }
 
+  private startGame() {
+    this.isGameStarted = true; // Устанавливаем флаг старта
+    this.startContainer.setVisible(false); // Скрываем экран старта
+    this.physics.resume(); // Возобновляем физику
+    this.player.getSprite().setVisible(true); // Делаем игрока видимым
+    this.enemies.startSpawning(2000); // Начинаем спавн врагов
+  }
+
+  private createStartScreen() {
+    const background = this.add.rectangle(600, 340, 1200, 750, 0x000000, 0.7);
+    const startText = this.add.text(600, 250, 'START GAME', {
+      font: '48px Arial',
+      fill: '#ffffff',
+    }).setOrigin(0.5);
+
+    const startButton = this.add.text(600, 400, 'Start', {
+      font: '32px Arial',
+      fill: '#ffffff',
+    })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => {
+        this.startGame(); // Запуск игры
+      });
+
+    this.startContainer = this.add.container(0, 0, [background, startText, startButton]);
+  }
+
+  private resetGame() {
+    this.isGameStarted = true; // Устанавливаем флаг старта
+    this.physics.resume(); // Возобновляем физику
+    this.player.getSprite().setVisible(true); // Показываем игрока
+    this.player.getSprite().setPosition(50, 550);
+    this.player.getSprite().setVelocity(0, 0);
+    this.enemies.clearEnemies(); // Удаляем всех врагов
+    this.enemies.startSpawning(2000); // Перезапускаем спавн врагов
+    this.gameState.reset(); // Сбрасываем состояние здоровья и очков
+    this.gameOverUI.hide(); // Скрываем интерфейс "Game Over"
+  }
+  
 }

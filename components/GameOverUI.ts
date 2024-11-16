@@ -12,8 +12,7 @@ export default class GameOverUI {
 
     const restartButton = scene.add.text(600, 400, 'Try again', {
       font: '32px Arial',
-      fill: '#ff0000',
-      backgroundColor: '#ffffff',
+      fill: '#ffffff',
     })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
