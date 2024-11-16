@@ -2,9 +2,11 @@ import Phaser from 'phaser';
 import background from '../assets/backgroundGame.png';
 import playerStand from '../assets/pixel/Tiles/Characters/tile_0000.png';
 import playerMove from '../assets/pixel/Tiles/Characters/tile_0001.png';
+import bullet from '../assets/pixel/Tiles/tile_0151.png';
 
 export default class GameScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
+  private bullets!: Phaser.Physics.Arcade.Group;
   private keys!: {
     up: Phaser.Input.Keyboard.Key;
     down: Phaser.Input.Keyboard.Key;
@@ -24,7 +26,7 @@ export default class GameScene extends Phaser.Scene {
     this.load.image('background', background);
     this.load.image('player', playerStand);
     this.load.image('player-move', playerMove);
-
+    this.load.image('bullet', bullet);
   }
 
   create() {
@@ -34,13 +36,20 @@ export default class GameScene extends Phaser.Scene {
     this.player.setBounce(0.1);
     this.player.setCollideWorldBounds(true);
 
-    this.keys = this.input.keyboard.addKeys({
+    this.keys = this.input.keyboard?.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.W,
       down: Phaser.Input.Keyboard.KeyCodes.S,
       left: Phaser.Input.Keyboard.KeyCodes.A,
       right: Phaser.Input.Keyboard.KeyCodes.D,
       jump: Phaser.Input.Keyboard.KeyCodes.SPACE,
     });
+
+    this.bullets = this.physics.add.group({
+      classType: Phaser.Physics.Arcade.Image,
+      runChildUpdate: true,
+    })
+
+    this.input.on('pointerdown', this.shootBullet, this)
   }
 
   update() {
@@ -106,6 +115,20 @@ export default class GameScene extends Phaser.Scene {
       }
       this.player.setTexture('player'); 
     }
+  }
 
+  private shootBullet(pointer: Phaser.Input.Pointer) {
+    const bullet = this.bullets.get(
+      this.player.x,
+      this.player.y - 10,
+      'bullet'
+    ) as Phaser.Physics.Arcade.Image;
+
+    if(bullet){
+      bullet.setActive(true);
+      bullet.setVisible(true);
+
+      this.physics.moveTo(bullet, pointer.x, pointer.y, 600)
+    }
   }
 }

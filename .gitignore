@@ -1,0 +1,13 @@
+# Логи
+*.log
+
+# Node.js
+node_modules
+dist/
+.env
+
+# IDE/Editor файлы
+.vscode/
+.idea/
+*.swp
+
