@@ -3,8 +3,8 @@ import Phaser from 'phaser';
 export default class GameStateManager {
   private health: number;
   private score: number;
-  private healthTextL!: Phaser.GameObjects.Text;
-  private scoreTextL!: Phaser.GameObjects.Text;
+  private healthText!: Phaser.GameObjects.Text;
+  private scoreText!: Phaser.GameObjects.Text;
 
   constructor(private scene: Phaser.Scene, initialHealth: number = 100, initialScore: number = 0) {
     this.health = initialHealth;
@@ -42,6 +42,15 @@ export default class GameStateManager {
     this.updateHealthText();
     this.updateScoreText();
   }
+
+  currentHealth(){
+    return this.health;
+  }
+
+  currentScore(){
+    return this.score;
+  }
+
 
   // Обновление текста
   private updateHealthText() {

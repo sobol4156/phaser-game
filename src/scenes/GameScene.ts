@@ -70,7 +70,7 @@ export default class GameScene extends Phaser.Scene {
     this.gameState.decreaseHealth(10)
 
     enemySprite.destroy()
-    if (this.health <= 0) {
+    if (this.gameState.currentHealth() <= 0) {
       this.showGameOverScreen();
     }
   }
