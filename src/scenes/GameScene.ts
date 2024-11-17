@@ -51,7 +51,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.gameState = new GameStateManager(this);
 
-    this.enemies.startSpawning(2000)
+    this.enemies.startSpawning(2000, () => this.gameState.currentScore())
 
     this.physics.add.collider(this.player.getSprite(), this.enemies.getGroup(), this.handlePlayerHit as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this)
 
@@ -68,6 +68,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     this.player.handleMovement(this.inputManager.getKeys());
+    this.enemies.update();
   }
 
   // урон по игроку
@@ -75,8 +76,8 @@ export default class GameScene extends Phaser.Scene {
     const enemySprite = enemy as Phaser.Physics.Arcade.Sprite;
 
     this.gameState.decreaseHealth(10)
+    this.enemies.takeDamage(enemySprite, 5)
 
-    enemySprite.destroy()
     if (this.gameState.currentHealth() <= 0) {
       this.showGameOverScreen();
     }
@@ -84,12 +85,12 @@ export default class GameScene extends Phaser.Scene {
   // урон по врагу
   private handleBulletHitEnemy(bullet: Phaser.GameObjects.GameObject, enemy: Phaser.GameObjects.GameObject) {
     const bulletSprite = bullet as Phaser.Physics.Arcade.Image;
-    const enemySprite = enemy as Phaser.Physics.Arcade.Image;
+    const enemySprite = enemy as Phaser.Physics.Arcade.Sprite;
 
     this.gameState.increaseScore(10)
 
     bulletSprite.destroy();
-    enemySprite.destroy();
+    this.enemies.takeDamage(enemySprite , 5)
   }
   // показ окошка GameOver
   private showGameOverScreen() {
@@ -105,7 +106,7 @@ export default class GameScene extends Phaser.Scene {
     this.gameStartUI.hide(); // Скрываем экран старта
     this.physics.resume(); // Возобновляем физику
     this.player.getSprite().setVisible(true); // Делаем игрока видимым
-    this.enemies.startSpawning(2000); // Начинаем спавн врагов
+    this.enemies.startSpawning(2000, () => this.gameState.currentScore()); // Начинаем спавн врагов
   }
 
   private resetGame() {
@@ -115,7 +116,7 @@ export default class GameScene extends Phaser.Scene {
     this.player.getSprite().setPosition(50, 550);
     this.player.getSprite().setVelocity(0, 0);
     this.enemies.clearEnemies(); // Удаляем всех врагов
-    this.enemies.startSpawning(2000); // Перезапускаем спавн врагов
+    this.enemies.startSpawning(2000, () => this.gameState.currentScore()); // Перезапускаем спавн врагов
     this.gameState.reset(); // Сбрасываем состояние здоровья и очков
     this.gameOverUI.hide(); // Скрываем интерфейс "Game Over"
   }
