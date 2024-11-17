@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import path from 'path';
 
 export default defineConfig({
-  base: './', 
+  base: '/phaser-game/', 
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
