@@ -57,9 +57,9 @@ export default class Enemy {
   
     boss
       .setCollideWorldBounds(true)
-      .setBounce(0.3)
+      .setBounce(0.4)
       .setScale(3) // Увеличиваем размер босса
-      .setVelocityX(Phaser.Math.Between(-100, -150))
+      .setVelocityX(Phaser.Math.Between(-150, -250))
       .setInteractive()
       .on('worldbounds', () => {
         const body = boss.body as Phaser.Physics.Arcade.Body;

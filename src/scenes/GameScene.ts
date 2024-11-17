@@ -24,10 +24,11 @@ export default class GameScene extends Phaser.Scene {
   private currentLevel: number = 1;
   private levelText!: Phaser.GameObjects.Text;
   private isTransitioningLevel: boolean = false;
+  private scoreLvlStep: number = 50
 
   private levels = Array.from({ length: 100 }, (_, i) => ({
     level: i + 1,
-    score: i * 20,
+    score: i * this.scoreLvlStep,
   }));
 
   constructor() {
@@ -81,7 +82,7 @@ export default class GameScene extends Phaser.Scene {
     })
 
     this.events.on('bossDefeated', () => {
-      this.gameState.increaseScore(20);
+      this.gameState.increaseScore(this.scoreLvlStep);
     })
   }
 
