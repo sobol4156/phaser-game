@@ -13,14 +13,14 @@ export default class GameStateManager {
     // Тексты здоровья и очков
     this.healthText = this.scene.add.text(20, 20, `Health: ${this.health}`, {
       font: '26px Arial',
-      fill: 'red',
+      color: 'red',
       stroke: 'red',
       strokeThickness: 1,
     });
 
     this.scoreText = this.scene.add.text(1040, 20, `Score: ${this.score}`, {
       font: '26px Arial',
-      fill: 'white',
+      color: 'white',
       strokeThickness: 1,
     });
   }

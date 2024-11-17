@@ -1,15 +1,15 @@
 import Phaser from 'phaser';
-import Player from '../../components/Player'
-import Enemy from '../../components/Enemy'
-import GameOverUI from '../../components/GameOverUI'
-import GameStateManager from '../../components/GameStateManager';
-import InputManager from '../../components/InputManager';
-import GameStartUI from '../../components/GameStartUI';
-import background from '../assets/backgroundGame.png';
-import playerStand from '../assets/pixel/Tiles/Characters/tile_0000.png';
-import playerMove from '../assets/pixel/Tiles/Characters/tile_0001.png';
-import bullet from '../assets/pixel/Tiles/tile_0151.png';
-import enemy from '../assets/pixel/Tiles/Characters/tile_0021.png';
+import Player from '@/components/Player'
+import Enemy from '@/components/Enemy'
+import GameOverUI from '@/components/GameOverUI'
+import GameStateManager from '@/components/GameStateManager';
+import InputManager from '@/components/InputManager';
+import GameStartUI from '@/components/GameStartUI';
+import background from '@/assets/backgroundGame.png';
+import playerStand from '@/assets/pixel/Tiles/Characters/tile_0000.png';
+import playerMove from '@/assets/pixel/Tiles/Characters/tile_0001.png';
+import bullet from '@/assets/pixel/Tiles/tile_0151.png';
+import enemy from '@/assets/pixel/Tiles/Characters/tile_0021.png';
 
 export default class GameScene extends Phaser.Scene {
   private player!: Player;
@@ -34,9 +34,9 @@ export default class GameScene extends Phaser.Scene {
 
   create() {
     this.add.image(600, 340, 'background');
-
+    console.log(playerStand)
     this.gameStartUI = new GameStartUI(this, () => {
-      this.startGame(); 
+      this.startGame();
     });
 
     this.inputManager = new InputManager(this)
@@ -53,9 +53,9 @@ export default class GameScene extends Phaser.Scene {
 
     this.enemies.startSpawning(2000)
 
-    this.physics.add.collider(this.player.getSprite(), this.enemies.getGroup(), this.handlePlayerHit, undefined, this)
+    this.physics.add.collider(this.player.getSprite(), this.enemies.getGroup(), this.handlePlayerHit as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this)
 
-    this.physics.add.collider(this.player.getBullets(), this.enemies.getGroup(), this.handleBulletHitEnemy, undefined, this);
+    this.physics.add.collider(this.player.getBullets(), this.enemies.getGroup(), this.handleBulletHitEnemy as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback, undefined, this);
 
     this.player.getSprite().setVisible(false);
     this.enemies.stopSwawning();
@@ -119,5 +119,5 @@ export default class GameScene extends Phaser.Scene {
     this.gameState.reset(); // Сбрасываем состояние здоровья и очков
     this.gameOverUI.hide(); // Скрываем интерфейс "Game Over"
   }
-  
+
 }

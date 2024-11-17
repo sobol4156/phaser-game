@@ -15,12 +15,12 @@ export default class GameStartUi {
 
     const startText = this.scene.add.text(600, 250, 'START GAME', {
       font: '48px Arial',
-      fill: '#ffffff',
+      color: '#ffffff',
     }).setOrigin(0.5);
 
     const startButton = this.scene.add.text(600, 400, 'Start', {
       font: '32px Arial',
-      fill: '#ffffff',
+      color: '#ffffff',
     })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })

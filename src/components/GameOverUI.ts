@@ -7,12 +7,12 @@ export default class GameOverUI {
     const background = scene.add.rectangle(600, 340, 1200, 750, 0x000000, 0.7);
     const gameOverText = scene.add.text(600, 250, 'GAME OVER', {
       font: '48px Arial',
-      fill: '#ffffff',
+      color: '#ffffff',
     }).setOrigin(0.5);
 
     const restartButton = scene.add.text(600, 400, 'Try again', {
       font: '32px Arial',
-      fill: '#ffffff',
+      color: '#ffffff',
     })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
