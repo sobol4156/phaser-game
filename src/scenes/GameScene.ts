@@ -19,6 +19,7 @@ export default class GameScene extends Phaser.Scene {
   private gameState!: GameStateManager;
   private gameStartUI!: GameStartUI;
   private isGameStarted: boolean = false;
+  private damagePlayer: number = 10;
 
   private currentLevel: number = 1;
   private levelText!: Phaser.GameObjects.Text;
@@ -26,7 +27,7 @@ export default class GameScene extends Phaser.Scene {
 
   private levels = Array.from({ length: 100 }, (_, i) => ({
     level: i + 1,
-    score: i * 10,
+    score: i * 20,
   }));
 
   constructor() {
@@ -74,6 +75,14 @@ export default class GameScene extends Phaser.Scene {
     this.player.getSprite().setVisible(false);
     this.enemies.stopSwawning();
     this.physics.pause();
+
+    this.events.on('enemyDefeated', () => {
+      this.gameState.increaseScore(10)
+    })
+
+    this.events.on('bossDefeated', () => {
+      this.gameState.increaseScore(20);
+    })
   }
 
   update() {
@@ -91,7 +100,7 @@ export default class GameScene extends Phaser.Scene {
     const enemySprite = enemy as Phaser.Physics.Arcade.Sprite;
 
     this.gameState.decreaseHealth(10)
-    this.enemies.takeDamage(enemySprite, 5)
+    this.enemies.takeDamage(enemySprite, this.damagePlayer / 2)
 
     if (this.gameState.currentHealth() <= 0) {
       this.showGameOverScreen();
@@ -102,10 +111,8 @@ export default class GameScene extends Phaser.Scene {
     const bulletSprite = bullet as Phaser.Physics.Arcade.Image;
     const enemySprite = enemy as Phaser.Physics.Arcade.Sprite;
 
-    this.gameState.increaseScore(10)
-
     bulletSprite.destroy();
-    this.enemies.takeDamage(enemySprite, 10)
+    this.enemies.takeDamage(enemySprite, this.damagePlayer)
   }
   // показ окошка GameOver
   private showGameOverScreen() {
@@ -179,12 +186,14 @@ export default class GameScene extends Phaser.Scene {
     this.time.delayedCall(2000, () => {
       levelContainer.destroy(); // Удаляем уведомление
       this.physics.resume(); // Возобновляем физику
-      const delay = 2000; // Задержка появления врагов
-      this.enemies.startSpawning(delay, () => this.gameState.currentScore());
+      if (level % 5 === 0) {
+        this.enemies.createBoss();
+      } else {
+        const delay = 2000; // Задержка появления врагов
+        this.enemies.startSpawning(delay, () => this.gameState.currentScore());
+      }
       this.isTransitioningLevel = false; // Сбрасываем флаг перехода
     });
   }
-
-
 
 }
