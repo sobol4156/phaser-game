@@ -2,12 +2,13 @@ import Phaser from 'phaser';
 
 export default class Enemy {
   private group: Phaser.Physics.Arcade.Group;
+  private healthBars: Phaser.GameObjects.Graphics[] = []; // Храним ссылки на healthBar
   private enemySpawnEvent!: Phaser.Time.TimerEvent;
 
   constructor(private scene: Phaser.Scene) {
     this.group = scene.physics.add.group({
-      classType: Phaser.Physics.Arcade.Sprite
-    })
+      classType: Phaser.Physics.Arcade.Sprite,
+    });
   }
 
   startSpawning(delaySpawn: number, getScore: () => number) {
@@ -26,19 +27,26 @@ export default class Enemy {
   }
 
   clearEnemies() {
-    this.clearHealthBars();
     this.group.getChildren().forEach((enemy) => {
-      enemy.destroy();
-    });
-  }
+      const enemySprite = enemy as Phaser.Physics.Arcade.Sprite;
+      const healthBar = enemySprite.getData('healthBar') as Phaser.GameObjects.Graphics;
 
-  clearHealthBars() {
-    this.group.getChildren().forEach((enemy) => {
-      const healthBar = (enemy as Phaser.Physics.Arcade.Sprite).getData('healthBar') as Phaser.GameObjects.Graphics;
       if (healthBar) {
+        healthBar.clear();
         healthBar.destroy();
       }
+
+      enemySprite.destroy();
     });
+
+    // Удаляем все индикаторы здоровья
+    this.healthBars.forEach((healthBar) => {
+      healthBar.clear();
+      healthBar.destroy();
+    });
+
+    this.healthBars = []; // Очищаем массив healthBars
+    this.group.clear(true, true);
   }
 
   // появление врагов
@@ -55,14 +63,11 @@ export default class Enemy {
       .setInteractive()
       .on('worldbounds', () => {
         const body = enemy.body as Phaser.Physics.Arcade.Body;
-        enemy.setVelocityX(-body.velocity.x)
+        enemy.setVelocityX(-body.velocity.x);
       });
-
 
     const health = score >= 200 ? 30 : score >= 100 ? 20 : 10;
     (enemy as any).health = health;
-
-
 
     const healthBar = this.scene.add.graphics();
     healthBar.fillStyle(0x00ff00, 1); // Зеленый цвет
@@ -71,6 +76,8 @@ export default class Enemy {
     enemy.setData('healthBar', healthBar);
     enemy.setData('maxHealth', health);
     enemy.setData('currentHealth', health);
+
+    this.healthBars.push(healthBar); // Добавляем healthBar в массив
   }
 
   updateHealthBar(enemy: Phaser.Physics.Arcade.Sprite) {
@@ -109,7 +116,6 @@ export default class Enemy {
     return this.group;
   }
 
-
   takeDamage(enemy: Phaser.Physics.Arcade.Sprite, damage: number) {
     const currentHealth = enemy.getData('currentHealth');
     const newHealth = currentHealth - damage;
@@ -120,6 +126,7 @@ export default class Enemy {
     if (newHealth <= 0) {
       const healthBar = enemy.getData('healthBar') as Phaser.GameObjects.Graphics;
       healthBar.destroy(); // Удаляем индикатор здоровья
+      this.healthBars = this.healthBars.filter((bar) => bar !== healthBar); // Удаляем из массива
       enemy.destroy(); // Уничтожаем врага
     }
   }

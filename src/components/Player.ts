@@ -5,7 +5,7 @@ export default class Player {
   private isOnGround: boolean = false;
   private moveAnimationInterval: NodeJS.Timeout | null = null;
   private bullets!: Phaser.Physics.Arcade.Group;
-  
+
   constructor(private scene: Phaser.Scene, x: number, y: number) {
     this.sprite = scene.physics.add.sprite(x, y, 'player');
     this.sprite.setBounce(0.1).setCollideWorldBounds(true);
@@ -25,6 +25,13 @@ export default class Player {
 
   getBullets() {
     return this.bullets;
+  }
+
+
+  clearBullets() {
+    this.bullets.getChildren().forEach((bullet) => {
+      bullet.destroy();
+    });
   }
 
   handleMovement(keys: Record<string, Phaser.Input.Keyboard.Key>) {
@@ -80,19 +87,19 @@ export default class Player {
       this.sprite.setTexture('player');
     }
   }
-    // выстрел пули
+  // выстрел пули
   private shootBullet(pointer: Phaser.Input.Pointer) {
-      const bullet = this.bullets.get(
-        this.sprite.x,
-        this.sprite.y - 10,
-        'bullet'
-      ) as Phaser.Physics.Arcade.Image;
-  
-      if (bullet) {
-        bullet.setActive(true);
-        bullet.setVisible(true);
-  
-        this.scene.physics.moveTo(bullet, pointer.x, pointer.y, 600)
-      }
+    const bullet = this.bullets.get(
+      this.sprite.x,
+      this.sprite.y - 10,
+      'bullet'
+    ) as Phaser.Physics.Arcade.Image;
+
+    if (bullet) {
+      bullet.setActive(true);
+      bullet.setVisible(true);
+
+      this.scene.physics.moveTo(bullet, pointer.x, pointer.y, 600)
     }
+  }
 }

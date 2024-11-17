@@ -20,6 +20,15 @@ export default class GameScene extends Phaser.Scene {
   private gameStartUI!: GameStartUI;
   private isGameStarted: boolean = false;
 
+  private currentLevel: number = 1;
+  private levelText!: Phaser.GameObjects.Text;
+  private isTransitioningLevel: boolean = false;
+
+  private levels = Array.from({ length: 100 }, (_, i) => ({
+    level: i + 1,
+    score: i * 10,
+  }));
+
   constructor() {
     super('GameScene');
   }
@@ -34,7 +43,7 @@ export default class GameScene extends Phaser.Scene {
 
   create() {
     this.add.image(600, 340, 'background');
-    console.log(playerStand)
+
     this.gameStartUI = new GameStartUI(this, () => {
       this.startGame();
     });
@@ -47,6 +56,11 @@ export default class GameScene extends Phaser.Scene {
 
     this.gameOverUI = new GameOverUI(this, () => {
       this.resetGame();
+    });
+
+    this.levelText = this.add.text(550, 20, `Level: ${this.currentLevel}`, {
+      font: '26px Arial',
+      color: '#ffffff',
     });
 
     this.gameState = new GameStateManager(this);
@@ -69,6 +83,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.player.handleMovement(this.inputManager.getKeys());
     this.enemies.update();
+    this.checkLevelProgression();
   }
 
   // урон по игроку
@@ -90,7 +105,7 @@ export default class GameScene extends Phaser.Scene {
     this.gameState.increaseScore(10)
 
     bulletSprite.destroy();
-    this.enemies.takeDamage(enemySprite , 5)
+    this.enemies.takeDamage(enemySprite, 10)
   }
   // показ окошка GameOver
   private showGameOverScreen() {
@@ -118,7 +133,58 @@ export default class GameScene extends Phaser.Scene {
     this.enemies.clearEnemies(); // Удаляем всех врагов
     this.enemies.startSpawning(2000, () => this.gameState.currentScore()); // Перезапускаем спавн врагов
     this.gameState.reset(); // Сбрасываем состояние здоровья и очков
+    this.currentLevel = 1; // Сбрасываем уровень
+    this.levelText.setText(`Level: ${this.currentLevel}`);// Обновляем текст уровня
     this.gameOverUI.hide(); // Скрываем интерфейс "Game Over"
   }
+
+  private checkLevelProgression() {
+    const score = this.gameState.currentScore();
+
+    const nextLevel = this.levels.findLast((lvl) => score >= lvl.score)
+
+    if (nextLevel && this.currentLevel < nextLevel.level) {
+      this.setLevel(nextLevel.level);
+    }
+  }
+
+  private setLevel(level: number) {
+    // Если переход уже выполняется или уровень не изменился, ничего не делаем
+    if (this.isTransitioningLevel || this.currentLevel === level) return;
+
+    this.isTransitioningLevel = true; // Устанавливаем флаг перехода
+    this.currentLevel = level;
+
+    // Очищаем врагов и останавливаем их спавн
+    this.enemies.stopSwawning();
+    this.enemies.clearEnemies();
+
+    this.player.clearBullets(); // Очищаем пули
+    this.player.getSprite().setPosition(50, 750); // Сбрасываем позицию игрока
+    this.physics.pause(); // Останавливаем физику
+
+    // Создаем затемненный фон
+    const backgroundBlur = this.add.rectangle(600, 340, 1200, 750, 0x000000, 0.7);
+
+    // Создаем текст уровня
+    const levelText = this.add.text(600, 340, `Level ${level}`, {
+      font: '48px Arial',
+      color: '#ffffff',
+    }).setOrigin(0.5);
+    this.levelText.setText(`Level: ${this.currentLevel}`);
+    // Контейнер для уровня
+    const levelContainer = this.add.container(0, 0, [backgroundBlur, levelText]);
+
+    // Показ уведомления на 2 секунды
+    this.time.delayedCall(2000, () => {
+      levelContainer.destroy(); // Удаляем уведомление
+      this.physics.resume(); // Возобновляем физику
+      const delay = 2000; // Задержка появления врагов
+      this.enemies.startSpawning(delay, () => this.gameState.currentScore());
+      this.isTransitioningLevel = false; // Сбрасываем флаг перехода
+    });
+  }
+
+
 
 }
